@@ -10,12 +10,14 @@ use App\Http\Resources\EmployeeResource;
 use App\Models\Employee;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 
 class EmployeeController extends Controller
 {
+
     public function __construct(
         protected EmployeeService $employeeService
     ) {}
@@ -64,6 +66,7 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request,  Employee $employee)
     {
+        // return $request; exit;
         $employee = $this->employeeService->update(
             $employee,
             $request->validated()

@@ -89,6 +89,7 @@ class EmployeeService
     
     public function update(Employee $employee, array $data)
     {
+        return 'hi'; exit;
         return DB::transaction(function () use ($employee, $data) {
 
             $this->validateFounder($data, $employee);
@@ -175,7 +176,7 @@ class EmployeeService
     //     }
     // }
 
-    public function validateFounder(array $data, ?Employee $employee = null): void
+    public function validateFounder(array $data, ?Employee $employee = null)
     {
         $isFounder = $data['is_founder'] ?? false;
 
@@ -229,7 +230,7 @@ class EmployeeService
 
 
     ////// Heirarchy by name + Salary.
-    public function getHierarchyWithSalaries(Employee $employee): array
+    public function getHierarchyWithSalaries(Employee $employee)
     {
         $allEmployees = Employee::select('id', 'name', 'salary', 'manager_id')->get()->keyBy('id');
 
@@ -253,7 +254,7 @@ class EmployeeService
 
 
     //////// Hierarchy by employee name
-    public function getHierarchy(Employee $employee): array
+    public function getHierarchy(Employee $employee)
     {
         $allEmployees = Employee::select('id', 'name', 'salary', 'manager_id')->get()->keyBy('id');
 
@@ -275,7 +276,7 @@ class EmployeeService
     }
 
     /////////
-    public function delete(Employee $employee): void
+    public function delete(Employee $employee)
     {
         DB::transaction(function () use ($employee) {
     
@@ -320,7 +321,7 @@ class EmployeeService
 
 
     //////Import emp of CSV.
-    public function importFromCsv($file): array
+    public function importFromCsv($file)
     {
         $rows = array_map('str_getcsv', file($file->getRealPath()));
 
@@ -334,12 +335,27 @@ class EmployeeService
 
             foreach ($rows as $index => $row) {
 
+                // $data = [
+                //     'name' => $row[0] ?? null,
+                //     'email' => $row[1] ?? null,
+                //     'salary' => $row[2] ?? null,
+                //     'position_id' => $row[3] ?? null,
+                //     'manager_id' => $row[4] ?? null,
+                //     'is_founder' => filter_var($row[5] ?? false, FILTER_VALIDATE_BOOLEAN),
+                // ];
+
+                $position = \App\Models\Position::where('title', $row[3])->first();
+                $manager = \App\Models\Employee::where('name', $row[4])->first();
+                
+                $salary = is_numeric($row[2]) ? $row[2] : null;
+                $email = filter_var($row[1], FILTER_VALIDATE_EMAIL) ? $row[1] : null;
+
                 $data = [
                     'name' => $row[0] ?? null,
                     'email' => $row[1] ?? null,
                     'salary' => $row[2] ?? null,
-                    'position_id' => $row[3] ?? null,
-                    'manager_id' => $row[4] ?? null,
+                    'position_id' => $position?->id,
+                    'manager_id' => $manager?->id,
                     'is_founder' => filter_var($row[5] ?? false, FILTER_VALIDATE_BOOLEAN),
                 ];
 

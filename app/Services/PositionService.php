@@ -29,6 +29,7 @@ class PositionService
 
     public function delete(Position $position)
     {
+        ////Prevent delete the position if it has an employees.
         if ($position->employees()->exists()) {
             throw ValidationException::withMessages([
                 'position' => 'Position cannot be deleted if it has employees.'
