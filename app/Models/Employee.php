@@ -8,11 +8,14 @@ use Illuminate\Support\Str;
 use \App\Models\Position;
 use \App\Models\EmployeeLog;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
 
     use HasFactory, Notifiable;
+
+    use SoftDeletes;
 
     protected $fillable = [
         'name',

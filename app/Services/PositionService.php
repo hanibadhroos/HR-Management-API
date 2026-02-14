@@ -27,15 +27,17 @@ class PositionService
         });
     }
 
-    public function delete(Position $position): void
+    public function delete(Position $position)
     {
-        /////prevent delete a position assigned to emp.
         if ($position->employees()->exists()) {
             throw ValidationException::withMessages([
-                'position' => 'Cannot delete position assigned to employees.'
+                'position' => 'Position cannot be deleted if it has employees.'
             ]);
         }
-
+    
         $position->delete();
+    
+        return $position;
     }
+    
 }

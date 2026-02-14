@@ -18,6 +18,8 @@ class EmployeeService
 
             $this->validateFounder($data);
 
+            $data['is_founder'] = $data['is_founder'] ?? false;
+
             $employee = Employee::create([
                 ...$data,
                 'salary_changed_at' => now(),
@@ -48,63 +50,173 @@ class EmployeeService
     }
 
 
+    // public function update(Employee $employee, array $data)
+    // {
+    //     return DB::transaction(function () use ($employee, $data) {
+    
+    //         $originalSalary = $employee->salary;
+    
+    //         $employee->update($data);
+    
+    //         // لو تغير الراتب
+    //         if (isset($data['salary']) && $data['salary'] != $originalSalary) {
+    
+    //             if ($employee->is_founder) {
+    //                 throw ValidationException::withMessages([
+    //                     'salary' => 'Founder salary cannot be changed.'
+    //                 ]);
+    //             }
+    
+    //             $employee->salary_changed_at = now();
+    //             $employee->save();
+    //         }
+    
+    //         if (!$employee->id) {
+    //             throw new \Exception('Employee ID is null');
+    //         }
+
+            
+    //         // سجل log دائمًا عند التحديث
+    //         EmployeeLog::create([
+    //             'employee_id' => $employee->id,
+    //             'action' => 'updated',
+    //             'description' => "Employee {$employee->name} updated."
+    //         ]);
+    
+    //         return $employee;
+    //     });
+    // }
+    
     public function update(Employee $employee, array $data)
     {
         return DB::transaction(function () use ($employee, $data) {
 
-            $oldSalary = $employee->salary;
+            $this->validateFounder($data, $employee);
 
-            $this->validateFounder($data);
+            $originalSalary = $employee->salary;
 
             $employee->update($data);
 
-            // Check salary change
-            if (array_key_exists('salary', $data) && $oldSalary != $data['salary']) {
+            if (isset($data['salary']) && $data['salary'] != $originalSalary) {
 
-                $employee->update([
-                    'salary_changed_at' => now()
-                ]);
+                if ($employee->is_founder) {
+                    throw ValidationException::withMessages([
+                        'salary' => 'Founder salary cannot be changed.'
+                    ]);
+                }
 
-                event(new SalaryChanged($employee, $oldSalary));
+                $employee->salary_changed_at = now();
+                $employee->save();
             }
 
-            // Database log
             EmployeeLog::create([
                 'employee_id' => $employee->id,
                 'action' => 'updated',
                 'description' => "Employee {$employee->name} updated."
             ]);
 
-            Log::channel('employee')->info('Employee updated', [
-                'employee_id' => $employee->id
-            ]);
-
-            return $employee->load(['manager', 'position']);
+            return $employee;
         });
     }
 
 
-    public function validateFounder(array $data): void
+    // public function validateFounder(array $data): void
+    // {
+    //     $isFounder = $data['is_founder'] ?? false;
+
+    //     if ($isFounder) {
+
+    //         if (Employee::where('is_founder', true)->exists()) {
+    //             throw ValidationException::withMessages([
+    //                 'is_founder' => 'There can only be one founder.'
+    //             ]);
+    //         }
+
+    //     } else {
+
+    //         if (empty($data['manager_id'])) {
+    //             throw ValidationException::withMessages([
+    //                 'manager_id' => 'Manager is required unless employee is founder.'
+    //             ]);
+    //         }
+    //     }
+    // }
+
+    // public function validateFounder(array $data, ?Employee $employee = null): void
+    // {
+    //     $isFounder = $data['is_founder'] ?? false;
+    
+    //     // لو founder
+    //     if ($isFounder) {
+    
+    //         $query = Employee::where('is_founder', true);
+    
+    //         if ($employee) {
+    //             $query->where('id', '!=', $employee->id);
+    //         }
+    
+    //         if ($query->exists()) {
+    //             throw ValidationException::withMessages([
+    //                 'is_founder' => 'There can only be one founder.'
+    //             ]);
+    //         }
+    
+    //         return;
+    //     }
+    
+    //     // لو ليس founder
+    //     $employeesCount = Employee::count();
+    
+    //     // فقط لو يوجد موظفين سابقين ولم يتم إرسال مدير
+    //     if ($employeesCount > 0 && empty($data['manager_id'])) {
+    //         throw ValidationException::withMessages([
+    //             'manager_id' => 'Manager is required unless employee is founder.'
+    //         ]);
+    //     }
+    // }
+
+    public function validateFounder(array $data, ?Employee $employee = null): void
     {
         $isFounder = $data['is_founder'] ?? false;
 
+        // ====== Rule 1: Only one founder ======
         if ($isFounder) {
 
-            if (Employee::where('is_founder', true)->exists()) {
+            $query = Employee::where('is_founder', true);
+
+            if ($employee) {
+                $query->where('id', '!=', $employee->id);
+            }
+
+            if ($query->exists()) {
                 throw ValidationException::withMessages([
-                    'is_founder' => 'There can only be one founder.'
+                    'is_founder' => 'There can only be one founder in the company.'
                 ]);
             }
 
-        } else {
+            return; // Founder not need manager_id.
+        }
 
-            if (empty($data['manager_id'])) {
-                throw ValidationException::withMessages([
-                    'manager_id' => 'Manager is required unless employee is founder.'
-                ]);
-            }
+        // ====== Rule 2: Non-founder must have manager, Using Founder id for create first manager. ======
+        $managerId = $data['manager_id'] ?? $employee?->manager_id;
+
+        if (empty($managerId)) {
+            throw ValidationException::withMessages([
+                'manager_id' => 'Each employee, except the founder, must have a manager.'
+            ]);
+        }
+
+        // ====== Rule 3: Prevent self-reference ======
+        if ($employee && $managerId == $employee->id) {
+            throw ValidationException::withMessages([
+                'manager_id' => 'Employee cannot be their own manager.'
+            ]);
         }
     }
+
+    
+
+
 
 
     public function getAll(array $filters)
@@ -115,49 +227,6 @@ class EmployeeService
     }
 
 
-    // public function getHierarchy(Employee $employee): array
-    // {
-    //     $hierarchy = [];
-
-    //     $current = $employee->load('manager');
-
-    //     while ($current) {
-
-    //         array_unshift($hierarchy, $current->name);
-
-    //         if (!$current->manager_id) {
-    //             break;
-    //         }
-
-    //         $current = Employee::with('manager')
-    //             ->find($current->manager_id);
-    //     }
-
-    //     return $hierarchy;
-    // }
-
-    // public function getHierarchyWithSalaries(Employee $employee): array
-    // {
-    //     $hierarchy = [];
-
-    //     $current = $employee->load('manager');
-
-    //     while ($current) {
-
-    //         $hierarchy = [
-    //             $current->name => $current->salary
-    //         ] + $hierarchy;
-
-    //         if (!$current->manager_id) {
-    //             break;
-    //         }
-
-    //         $current = Employee::with('manager')
-    //             ->find($current->manager_id);
-    //     }
-
-    //     return $hierarchy;
-    // }
 
     ////// Heirarchy by name + Salary.
     public function getHierarchyWithSalaries(Employee $employee): array
@@ -206,41 +275,40 @@ class EmployeeService
     }
 
     /////////
-
     public function delete(Employee $employee): void
     {
         DB::transaction(function () use ($employee) {
+    
+            $employeeId = $employee->id;
+            $employeeName = $employee->name;
 
-            //////Prevent Founder deletion
+            EmployeeLog::create([
+                'employee_id' => $employee->id,
+                'action' => 'deleted',
+                'description' => "Employee {$employee->name} deleted."
+            ]);
+    
+            ///// منع حذف الموسس
             if ($employee->is_founder) {
                 throw ValidationException::withMessages([
                     'employee' => 'Founder cannot be deleted.'
                 ]);
             }
 
-            ///// Prevent if he has an employees.
-            if ($employee->subordinates()->exists()) {
+            //// منع حذف مدير نحته موظفين
+            if (Employee::where('manager_id', $employee->id)->exists()) {
                 throw ValidationException::withMessages([
-                    'employee' => 'Cannot delete employee with subordinates.'
+                    'employee' => 'Cannot delete manager who has subordinates.'
                 ]);
             }
-
-            // Database log
-            EmployeeLog::create([
-                'employee_id' => $employee->id,
-                'action' => 'deleted',
-                'description' => "Employee {$employee->name} deleted."
-            ]);
-
-            // File log
-            Log::channel('employee')->info('Employee deleted', [
-                'employee_id' => $employee->id,
-                'name' => $employee->name
-            ]);
-
+                        
             $employee->delete();
+
+            ///// ويمكننا استرجاعه باستخدام الامر Employee::withTrashed()->find($id);
         });
     }
+    
+    
 
     ///// Export emp to CSV
     public function exportToCsv()

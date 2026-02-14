@@ -44,7 +44,7 @@ Route::prefix('employees')->middleware('auth:sanctum')->group(function () {
 
 
 ///// Position routes
-Route::middleware('auth::sanctum')->group(function(){
+Route::middleware('auth:sanctum')->group(function(){
     Route::apiResource('positions', PositionController::class);
 
 

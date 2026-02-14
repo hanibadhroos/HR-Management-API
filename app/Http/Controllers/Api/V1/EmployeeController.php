@@ -87,6 +87,8 @@ class EmployeeController extends Controller
         ]);
     }
 
+
+    
     ////////Hierarchy by employee name
     public function hierarchy(Employee $employee)
     {

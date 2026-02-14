@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('employee_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->uuid('employee_id');
+            // $table->uuid('employee_id');
+            $table->uuid('employee_id')->nullable();
 
 
             $table->string('action'); // created, updated, deleted
@@ -25,8 +26,9 @@ return new class extends Migration
             $table->foreign('employee_id')
                     ->references('id')
                     ->on('employees')
-                    ->cascadeOnDelete();
+                    ->nullOnDelete();
 
+            
         });
     }
 

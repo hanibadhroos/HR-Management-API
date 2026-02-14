@@ -20,11 +20,7 @@ class EmployeeTest extends TestCase
     protected function authenticate()
     {
         $user = User::factory()->create();
-            Sanctum::actingAs($user, ['*']); 
-
-        Gate::before(function () {
-            return true;
-        });
+        Sanctum::actingAs($user); 
     }
 
 
@@ -102,5 +98,32 @@ class EmployeeTest extends TestCase
             'id' => $employee->id
         ]);
     }
+
+    public function test_founder_salary_cannot_be_changed()
+    {
+        $this->authenticate();
+
+        $position = Position::factory()->create();
+
+        $founder = Employee::factory()->create([
+            'position_id' => $position->id,
+            'salary' => 10000,
+            'is_founder' => true,
+        ]);
+
+        $response = $this->putJson(
+            "/api/v1/employees/{$founder->id}",
+            ['salary' => 20000]
+        );
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseHas('employees', [
+            'id' => $founder->id,
+            'salary' => 10000
+        ]);
+    }
+
+
 
 }

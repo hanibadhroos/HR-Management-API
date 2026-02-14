@@ -12,6 +12,8 @@ class EmployeeServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    
+
     public function test_salary_change_updates_salary_changed_at()
     {
         $position = Position::factory()->create();
@@ -24,8 +26,13 @@ class EmployeeServiceTest extends TestCase
 
         $service = new EmployeeService();
 
+        $manager = Employee::factory()->create([
+            'position_id' => $position->id
+        ]);
+
         $service->update($employee, [
-            'salary' => 7000
+            'salary' => 7000,
+            'manager_id' => $manager->id
         ]);
 
         $this->assertDatabaseHas('employees', [

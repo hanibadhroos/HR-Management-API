@@ -16,17 +16,19 @@ class EmployeeLog extends Model
         'description'
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
+    
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected static function booted()
-    {
-        static::creating(function ($log) {
-            if (!$log->id) {
-                $log->id = Str::uuid();
-            }
-        });
-    }
+
 
     public function employee()
     {
