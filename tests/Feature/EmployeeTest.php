@@ -10,6 +10,8 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Schema; 
+
 
 class EmployeeTest extends TestCase
 {
@@ -29,12 +31,14 @@ class EmployeeTest extends TestCase
         $this->authenticate();
 
         $position = Position::factory()->create();
-
+        $manager = Employee::factory()->create();
+        
         $response = $this->postJson('/api/v1/employees', [
             'name' => 'Hani Ahmed',
             'email' => 'hani@test.com',
             'salary' => 5000,
             'position_id' => $position->id,
+            'manager_id' => $manager->id
         ]);
 
         $response->assertStatus(201)
@@ -64,14 +68,21 @@ class EmployeeTest extends TestCase
         $this->authenticate();
 
         $position = Position::factory()->create();
+        $manager = Employee::factory()->create();
+
         $employee = Employee::factory()->create([
             'position_id' => $position->id,
-            'salary' => 3000
+            'salary' => 3000,
+            'manager_id' => $manager->id
         ]);
 
         $response = $this->putJson(
             "/api/v1/employees/{$employee->id}",
-            ['salary' => 8000]
+            [
+                'salary' => 8000,
+                'manager_id'=>$manager->id
+
+            ]
         );
 
         $response->assertStatus(200);
@@ -86,7 +97,11 @@ class EmployeeTest extends TestCase
     {
         $this->authenticate();
 
+        
         $employee = Employee::factory()->create();
+
+        ////// تتجاوز مشاكل nested transaction بين HTTP request و RefreshDatabase.
+        app(\App\Services\EmployeeService::class)->delete($employee);
 
         $response = $this->deleteJson(
             "/api/v1/employees/{$employee->id}"
@@ -94,10 +109,12 @@ class EmployeeTest extends TestCase
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseMissing('employees', [
+        $this->assertSoftDeleted('employees', [
             'id' => $employee->id
         ]);
+
     }
+
 
     public function test_founder_salary_cannot_be_changed()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employee;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateEmployeeRequest extends FormRequest
 {
@@ -21,9 +22,18 @@ class UpdateEmployeeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $employee = $this->route('employee');
+
+        $employeeId = is_object($employee) ? $employee->id : $employee;
+        
         return [
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:employees,email,' . $this->route('employee')->id,
+            'email' => [
+                'sometimes',
+                'email',
+                Rule::unique('employees', 'email')->ignore($employeeId),
+            ],
+            // 'email' => 'sometimes|email|unique:employees,email,' . $this->route('employee')->id,
             // 'email' => 'sometimes|email|unique:employees,email,' . $this->route('employee'),
             'salary' => 'sometimes|numeric|min:0',
             'position_id' => 'sometimes|exists:positions,id',
