@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SalaryChangedNotification extends Notification
+class SalaryChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -40,6 +40,7 @@ class SalaryChangedNotification extends Notification
         /////Send it to emp.
         return (new MailMessage)
             ->subject('Your Salary Has Been Updated')
+            ->line("Your salary has been updated.")
             ->line("Old Salary: {$this->oldSalary}")
             ->line("New Salary: {$this->newSalary}")
             ->line('Thank you.');

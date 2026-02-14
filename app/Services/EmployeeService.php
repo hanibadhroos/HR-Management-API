@@ -98,6 +98,8 @@ class EmployeeService
 
             $employee->update($data);
 
+            $salaryChanged = false;
+
             if (isset($data['salary']) && $data['salary'] != $originalSalary) {
 
                 if ($employee->is_founder) {
@@ -108,15 +110,29 @@ class EmployeeService
 
                 $employee->salary_changed_at = now();
                 $employee->save();
-                event(new SalaryChanged($employee, $originalSalary));
+
+                $salaryChanged = true;
+
+                // event(new SalaryChanged($employee, $originalSalary));
                 
             }
 
+            if($data['salary'] == $originalSalary){
+                throw ValidationException::withMessages([
+                    'employee'=> "This is The original salary, You have to enter new salary."
+                ]);
+            }
             EmployeeLog::create([
                 'employee_id' => $employee->id,
                 'action' => 'updated',
                 'description' => "Employee {$employee->name} updated."
             ]);
+
+            if ($salaryChanged) {
+                \Illuminate\Support\Facades\Event::dispatch(
+                    new \App\Events\SalaryChanged($employee, $originalSalary)
+                );
+            }
 
             return $employee;
         });

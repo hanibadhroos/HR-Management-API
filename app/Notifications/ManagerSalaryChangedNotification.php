@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ManagerSalaryChangedNotification extends Notification
+class ManagerSalaryChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -38,9 +38,10 @@ class ManagerSalaryChangedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->subject('Employee Salary Updated')
-                    ->line("Employee {$this->employee->name}'s salary has been updated.")
-                    ->line("New Salary: {$this->employee->salary}");
+            ->mailer('smtp')
+            ->subject('Employee Salary Updated')
+            ->line("Employee {$this->employee->name}'s salary has been updated.")
+            ->line("New Salary: {$this->employee->salary}");
     }
 
     /**
