@@ -89,7 +89,7 @@ class EmployeeService
     
     public function update(Employee $employee, array $data)
     {
-        return 'hi'; exit;
+        
         return DB::transaction(function () use ($employee, $data) {
 
             $this->validateFounder($data, $employee);
@@ -108,6 +108,8 @@ class EmployeeService
 
                 $employee->salary_changed_at = now();
                 $employee->save();
+                event(new SalaryChanged($employee, $originalSalary));
+                
             }
 
             EmployeeLog::create([
