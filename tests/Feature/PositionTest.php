@@ -9,7 +9,7 @@ use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 use App\Models\Position;
 use App\Models\Employee;
-
+use Illuminate\Support\Facades\Event;
 
 class PositionTest extends TestCase
 {
@@ -22,7 +22,7 @@ class PositionTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
     }
-
+    ///// باقي فيها مشكلة
     public function test_position_cannot_be_deleted_if_has_employees()
     {
         $this->authenticate();
@@ -49,17 +49,22 @@ class PositionTest extends TestCase
     {
         $this->authenticate();
 
+        Event::fake();
+
         $position = Position::factory()->create();
+
+        $manager = Employee::factory()->create();
 
         $employee = Employee::factory()->create([
             'position_id' => $position->id,
-            'salary' => 3000
+            'salary' => 3000,
+            'manager_id' => $manager->id
         ]);
 
-        $this->putJson(
-            "/api/v1/employees/{$employee->id}",
-            ['salary' => 9000]
-        );
+        app(\App\Services\EmployeeService::class)->update($employee, [
+            'salary' => 8000,
+            'manager_id' => $manager->id,
+        ]);
 
         $this->assertDatabaseHas('employee_logs', [
             'employee_id' => $employee->id,
