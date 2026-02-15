@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use App\Events\SalaryChanged;
+use App\Exports\EmployeeExport;
+use App\Imports\EmployeeImport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeService
 {
@@ -253,94 +256,7 @@ class EmployeeService
     //////Import emp of CSV.
     public function importFromCsv($file)
     {
-        $rows = array_map('str_getcsv', file($file->getRealPath()));
-
-        ///// remove header.
-        $header = array_shift($rows);
-
-        $created = 0;
-        $errors = [];
-
-        DB::transaction(function () use ($rows, &$created, &$errors) {
-
-            foreach ($rows as $index => $row) {
-
-                // $data = [
-                //     'name' => $row[0] ?? null,
-                //     'email' => $row[1] ?? null,
-                //     'salary' => $row[2] ?? null,
-                //     'position_id' => $row[3] ?? null,
-                //     'manager_id' => $row[4] ?? null,
-                //     'is_founder' => filter_var($row[5] ?? false, FILTER_VALIDATE_BOOLEAN),
-                // ];
-
-                $position = \App\Models\Position::where('title', $row[3])->first();
-                $manager = \App\Models\Employee::where('name', $row[4])->first();
-                
-                $salary = is_numeric($row[2]) ? $row[2] : null;
-                $email = filter_var($row[1], FILTER_VALIDATE_EMAIL) ? $row[1] : null;
-
-                $data = [
-                    'name' => $row[0] ?? null,
-                    'email' => $row[1] ?? null,
-                    'salary' => $row[2] ?? null,
-                    'position_id' => $position?->id,
-                    'manager_id' => $manager?->id,
-                    'is_founder' => filter_var($row[5] ?? false, FILTER_VALIDATE_BOOLEAN),
-                ];
-
-                $validator = Validator::make($data, [
-                    'name' => 'required|string|max:255',
-                    'email' => 'required|email|unique:employees,email',
-                    'salary' => 'required|numeric|min:0',
-                    'position_id' => 'required|exists:positions,id',
-                    'manager_id' => 'nullable|exists:employees,id',
-                    'is_founder' => 'boolean',
-                ]);
-
-                if ($validator->fails()) {
-                    $errors[] = [
-                        'row' => $index + 2,
-                        'errors' => $validator->errors()->toArray()
-                    ];
-                    continue;
-                }
-
-                ///// Founder logic
-                if ($data['is_founder'] && Employee::where('is_founder', true)->exists()) {
-                    $errors[] = [
-                        'row' => $index + 2,
-                        'errors' => ['is_founder' => ['Founder already exists']]
-                    ];
-                    continue;
-                }
-
-                if (!$data['is_founder'] && empty($data['manager_id'])) {
-                    $errors[] = [
-                        'row' => $index + 2,
-                        'errors' => ['manager_id' => ['Manager required unless founder']]
-                    ];
-                    continue;
-                }
-
-                Employee::create([
-                    ...$data,
-                    'salary_changed_at' => now(),
-                ]);
-
-                $created++;
-            }
-        });
-
-        Log::channel('employee')->info('Employees imported', [
-            'created' => $created,
-            'errors_count' => count($errors)
-        ]);
-
-        return [
-            'created' => $created,
-            'errors' => $errors,
-        ];
+        Excel::import(new EmployeeImport, $file);
     }
 
 

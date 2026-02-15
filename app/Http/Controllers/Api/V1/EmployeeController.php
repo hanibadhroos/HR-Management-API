@@ -178,8 +178,6 @@ class EmployeeController extends Controller
 
         return response()->json([
             'message' => 'Import completed.',
-            'created' => $result['created'],
-            'errors' => $result['errors'],
         ]);
     }
 

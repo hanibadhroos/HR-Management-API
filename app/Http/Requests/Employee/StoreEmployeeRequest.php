@@ -15,7 +15,7 @@ class StoreEmployeeRequest extends FormRequest
 
     public function rules(){
         return[
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:employees,name',
             'email' => 'required|email|unique:employees,email',
             'salary' => 'required|numeric|min:0',
             'position_id' => 'required|exists:positions,id',
@@ -23,4 +23,5 @@ class StoreEmployeeRequest extends FormRequest
             'is_founder' => 'boolean',
         ];
     }
+
 }

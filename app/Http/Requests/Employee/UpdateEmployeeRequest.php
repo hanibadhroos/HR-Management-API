@@ -27,14 +27,12 @@ class UpdateEmployeeRequest extends FormRequest
         $employeeId = is_object($employee) ? $employee->id : $employee;
         
         return [
-            'name' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255|unique:employees,name,' . $this->route('employee')->id,
             'email' => [
                 'sometimes',
                 'email',
                 Rule::unique('employees', 'email')->ignore($employeeId),
             ],
-            // 'email' => 'sometimes|email|unique:employees,email,' . $this->route('employee')->id,
-            // 'email' => 'sometimes|email|unique:employees,email,' . $this->route('employee'),
             'salary' => 'sometimes|numeric|min:0',
             'position_id' => 'sometimes|exists:positions,id',
             'manager_id' => 'nullable|exists:employees,id',
