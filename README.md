@@ -88,8 +88,20 @@ name, email, salary, position, manager, isfounder
 ### Running Tests
 - `php artisan test`
 ### Running Notifications:
+    You have to set your mailer information in .env file:
+    
+    - MAIL_MAILER=smtp
+    - MAIL_HOST=smtp.gmail.com
+    - MAIL_PORT=587
+    - MAIL_USERNAME= your_user_name_or_email
+    - MAIL_PASSWORD="your_google_APP_password"
+    - MAIL_ENCRYPTION=tls
+    - MAIL_FROM_ADDRESS=Your_address_or_email
+    - MAIL_FROM_NAME="Hr Management"
+    
 #### if you want to enable notifications, you must first run the following command, for run them on background:
     `php artisan queue:work`
+
 
 ## API Versioning
 All endpoints are prefixed with: `/api/v1`
