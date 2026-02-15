@@ -9,6 +9,7 @@ use App\Http\Resources\PositionResource;
 use App\Models\Position;
 use App\Services\PositionService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class PositionController extends Controller
 {
@@ -74,4 +75,7 @@ class PositionController extends Controller
             'message'=> 'Position deleted successfully.'
         ]);
     }
+
+    
+
 }

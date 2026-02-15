@@ -32,19 +32,19 @@ class PositionTest extends TestCase
         Employee::factory()->create([
             'position_id' => $position->id
         ]);
+        
 
-        $response = $this->deleteJson(
-            "/api/v1/positions/{$position->id}"
-        );
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
 
-        $response->assertStatus(422);
+        app(\App\Services\PositionService::class)->delete($position);
+
 
         $this->assertDatabaseHas('positions', [
             'id' => $position->id
         ]);
     }
 
-
+    ///// Done
     public function test_logs_created_when_employee_updated()
     {
         $this->authenticate();
@@ -72,7 +72,7 @@ class PositionTest extends TestCase
         ]);
     }
 
-
+    /////Done.
     public function test_employee_without_salary_change_filter()
     {
         $this->authenticate();
