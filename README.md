@@ -35,6 +35,9 @@ A robust and scalable HR Management RESTful API built with Laravel 11, following
 - Artisan command to delete old logs
 - Artisan command to clear log files
 
+### Expected CSV file format in the following order:
+name, email, salary, position, manager, isfounder
+
 ### Artisan Commands
 - employee-logs:clean {days} ---> Delete logs older than X days
 - logs:clear --->	Remove all log files
@@ -78,8 +81,15 @@ A robust and scalable HR Management RESTful API built with Laravel 11, following
 - `php artisan migrate`
 ### Run server:
 - `php artisan serve`
+
+### Populate the database with fake (sample) data during project installation using the following command:
+`php artisan migrate --seed`
+
 ### Running Tests
 - `php artisan test`
+### Running Notifications:
+#### if you want to enable notifications, you must first run the following command, for run them on background:
+    `php artisan queue:work`
 
 ## API Versioning
 All endpoints are prefixed with: `/api/v1`
