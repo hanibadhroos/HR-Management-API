@@ -42,8 +42,8 @@ name, email, salary, position, manager, isfounder
 - employee-logs:clean {days} ---> Delete logs older than X days
 - logs:clear --->	Remove all log files
 - employees:insert {count} --->	Insert multiple employees
-- db:export ---> Export database to SQL
-- employees:export-json --->Export employees to JSON
+- db:export ---> Export database to SQL into **storage/app/backups** folder.
+- employees:export-json ---> Export employees to JSON into **storage\app/exports** folder
 
 ### Architecture
 - The project follows:
