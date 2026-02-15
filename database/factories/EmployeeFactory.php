@@ -21,6 +21,7 @@ class EmployeeFactory extends Factory
             Position::factory()->count(5)->create();
         }
         return [
+            'id' => $this->faker->uuid(),
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'salary' => $this->faker->numberBetween(1000, 10000),

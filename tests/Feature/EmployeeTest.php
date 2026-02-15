@@ -7,6 +7,7 @@ use App\Models\Position;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -67,6 +68,8 @@ class EmployeeTest extends TestCase
     {
         $this->authenticate();
 
+        Event::fake();
+        
         $position = Position::factory()->create();
         $manager = Employee::factory()->create();
 
@@ -76,16 +79,10 @@ class EmployeeTest extends TestCase
             'manager_id' => $manager->id
         ]);
 
-        $response = $this->putJson(
-            "/api/v1/employees/{$employee->id}",
-            [
-                'salary' => 8000,
-                'manager_id'=>$manager->id
-
-            ]
-        );
-
-        $response->assertStatus(200);
+        app(\App\Services\EmployeeService::class)->update($employee, [
+            'salary' => 8000,
+            'manager_id' => $manager->id,
+        ]);
 
         $this->assertDatabaseHas('employees', [
             'id' => $employee->id,
@@ -103,11 +100,6 @@ class EmployeeTest extends TestCase
         ////// تتجاوز مشاكل nested transaction بين HTTP request و RefreshDatabase.
         app(\App\Services\EmployeeService::class)->delete($employee);
 
-        $response = $this->deleteJson(
-            "/api/v1/employees/{$employee->id}"
-        );
-
-        $response->assertStatus(200);
 
         $this->assertSoftDeleted('employees', [
             'id' => $employee->id

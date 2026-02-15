@@ -66,7 +66,12 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request,  Employee $employee)
     {
-        // return $request; exit;
+        if(!$employee){
+            return response()->json([
+                'message'=> 'Employee no found.'
+            ], 404);
+        }
+
         $employee = $this->employeeService->update(
             $employee,
             $request->validated()

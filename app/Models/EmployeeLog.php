@@ -1,14 +1,15 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use \App\Models\Employee;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class EmployeeLog extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $fillable = [
         'employee_id',
@@ -16,18 +17,9 @@ class EmployeeLog extends Model
         'description'
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            $model->id = (string) Str::uuid();
-        });
-    }
-    
+        
     protected $keyType = 'string';
     public $incrementing = false;
-
 
 
     public function employee()
